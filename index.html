@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="StockBase"/>
+<title>StockBase</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F5F2EC;--w:#fff;--ink:#161412;--mu:#8C8680;--bd:#E3DDD4;--r:#C8361A;--rl:#FFF0ED;--rm:#FBCDC4;--g:#1A6840;--gl:#F0FBF5;--gm:#BBF7D0;--go:#B8872A;--bl:#2558D4}
+body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;-webkit-font-smoothing:antialiased}
+.app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:var(--w);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:60;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700}
+.logo em{color:var(--r);font-style:italic}
+.sdot{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mu);font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g)}
+.dot.off{background:var(--mu)}
+.scroll{flex:1;padding:14px 14px 100px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--w);border-top:1px solid var(--bd);display:grid;grid-template-columns:repeat(4,1fr);z-index:60;padding-bottom:env(safe-area-inset-bottom,8px)}
+.nb{padding:10px 4px 8px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.3px;font-family:'Outfit',sans-serif}
+.nb.on{color:var(--r)}
+.nb-fab{background:var(--r);border-radius:14px;padding:7px 12px;margin-bottom:-2px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 4px 14px rgba(200,54,26,.35);color:#fff;font-size:9px;font-weight:700;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 18px;border-radius:12px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;transition:transform .15s}
+.btn:active{transform:scale(.97)}
+.bp{background:var(--r);color:#fff;box-shadow:0 4px 14px rgba(200,54,26,.3)}
+.bs{background:var(--w);color:var(--ink);border:1.5px solid var(--bd)}
+.bg{background:var(--g);color:#fff}
+.bgh{background:transparent;color:var(--mu);border:1.5px solid var(--bd)}
+.btn:disabled{opacity:.5;pointer-events:none}
+.bxs{padding:6px 12px;font-size:12px;border-radius:8px}
+.brow{display:flex;gap:8px}
+.fld{margin-bottom:12px}
+.lbl{display:block;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.inp,.sel,.txa{width:100%;background:var(--w);border:1.5px solid var(--bd);border-radius:10px;padding:11px 13px;color:var(--ink);font-family:'Outfit',sans-serif;font-size:15px;-webkit-appearance:none;transition:border-color .15s}
+.inp:focus,.sel:focus,.txa:focus{outline:none;border-color:var(--r)}
+.sel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238C8680' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.txa{resize:none;min-height:68px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scan-frame{background:#161412;border-radius:18px;overflow:hidden;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;margin-bottom:14px}
+.scan-frame img{width:100%;height:100%;object-fit:cover}
+.scan-ph{text-align:center;color:rgba(255,255,255,.4)}
+.scan-ph .big{font-size:52px;display:block;margin-bottom:10px}
+.scan-ph p{font-size:14px;line-height:1.6}
+.corner{position:absolute;width:26px;height:26px;border-color:rgba(255,255,255,.6);border-style:solid}
+.c-tl{top:14px;left:14px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.c-tr{top:14px;right:14px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.c-bl{bottom:14px;left:14px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.c-br{bottom:14px;right:14px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-ov{position:absolute;inset:0;background:rgba(0,0,0,.65);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;font-size:15px;font-weight:500}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.pls{animation:pulse 1.1s ease infinite;font-size:44px}
+.qs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.qi{background:var(--w);border-radius:12px;padding:12px;text-align:center;border:1px solid var(--bd)}
+.qv{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;line-height:1}
+.ql{font-size:10px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+.hint{text-align:center;color:var(--mu);font-size:12.5px;margin-top:12px;line-height:1.65}
+.aichip{display:inline-flex;align-items:center;gap:5px;background:var(--rl);color:var(--r);border:1px solid var(--rm);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;margin-bottom:10px}
+.pbox{background:var(--gl);border:1px solid var(--gm);border-radius:12px;padding:14px;margin-bottom:12px}
+.pbox-t{font-size:11px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.mgrow{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-top:10px;padding:8px 10px;background:var(--w);border-radius:8px}
+.mgn{font-weight:700;font-size:14px}
+.mg-g{color:var(--g)}.mg-m{color:var(--go)}.mg-b{color:var(--r)}
+.cophint{font-size:11.5px;color:var(--g);font-weight:600;margin-top:4px}
+.item{background:var(--w);border-radius:14px;padding:13px;margin-bottom:9px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1px solid var(--bd);display:flex;gap:11px}
+.thumb{width:68px;height:68px;border-radius:10px;overflow:hidden;background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.ibody{flex:1;min-width:0}
+.ibrand{font-size:10px;font-weight:700;color:var(--r);text-transform:uppercase;letter-spacing:.5px}
+.imodel{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.imeta{color:var(--mu);font-size:11.5px;margin-top:2px}
+.itags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.tag{padding:2px 8px;border-radius:5px;font-size:10.5px;font-weight:700}
+.tc{background:#F0F4FF;color:var(--bl)}.ts{background:var(--rl);color:var(--r)}.tq{background:var(--gl);color:var(--g)}.tw{background:#FBF6EC;color:var(--go)}
+.iact{display:flex;gap:6px;margin-top:8px}
+.iright{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;flex-shrink:0;min-width:70px}
+.peur{font-family:'Playfair Display',serif;font-size:20px;font-weight:700}
+.pcop{font-size:10.5px;color:var(--g);font-weight:700;text-align:right;margin-top:2px}
+.pmg{font-size:11px;font-weight:700;margin-top:3px}
+.sbar{display:flex;gap:8px;margin-bottom:12px}
+.sinp{flex:1;background:var(--w);border:1.5px solid var(--bd);border-radius:10px;padding:11px 14px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--ink)}
+.sinp:focus{outline:none;border-color:var(--r)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd);background:var(--w);color:var(--mu);font-family:'Outfit',sans-serif}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.empty{text-align:center;padding:55px 20px;color:var(--mu)}
+.empty-i{font-size:50px;margin-bottom:12px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.sc{background:var(--w);border-radius:14px;padding:15px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1px solid var(--bd)}
+.sl{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.sv{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;line-height:1}
+.ss{font-size:11px;color:var(--mu);margin-top:4px}
+.cc{background:var(--w);border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1px solid var(--bd);margin-bottom:10px}
+.ct{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.crow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)}
+.crow:last-child{border-bottom:none}
+.setup{min-height:100vh;background:var(--bg);padding:40px 18px;display:flex;flex-direction:column;justify-content:center;max-width:430px;margin:0 auto}
+.slogo{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;text-align:center;margin-bottom:6px}
+.slogo em{color:var(--r);font-style:italic}
+.ssub{text-align:center;color:var(--mu);font-size:14px;margin-bottom:28px;line-height:1.65}
+.scard{background:var(--w);border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1px solid var(--bd);margin-bottom:12px}
+.sstep{font-size:10px;font-weight:700;color:var(--r);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.shelp{font-size:12px;color:var(--mu);margin-top:6px;line-height:1.55}
+.slink{color:var(--bl);text-decoration:none}
+.mpill{display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:14px;border:1px solid var(--bd)}
+.mopt{flex:1;padding:9px;text-align:center;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--mu);font-family:'Outfit',sans-serif;border:none;background:transparent;transition:all .15s}
+.mopt.on{background:var(--w);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.1)}
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:flex-end}
+.modal{background:var(--w);border-radius:20px 20px 0 0;width:100%;max-width:430px;margin:0 auto;padding:24px 18px 44px;border-top:2px solid var(--r)}
+.mttl{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:8px}
+.msub{color:var(--mu);font-size:13.5px;margin-bottom:20px;line-height:1.55}
+.sec{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--bd)}
+.warn{background:var(--rl);border:1px solid var(--rm);border-radius:12px;padding:13px;margin-top:10px}
+.warn p{font-size:12.5px;color:var(--r);line-height:1.55}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;white-space:nowrap;z-index:200;animation:slideUp .25s ease;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.tok{background:var(--ink);color:#fff}.terr{background:var(--r);color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin .7s linear infinite}
+.ibt{background:none;border:none;cursor:pointer;color:var(--mu);padding:4px;border-radius:8px;display:flex;align-items:center}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const CAT={Zapatillas:"👟",Gorras:"🧢",Camisetas:"👕",Pantalones:"👖",Sudaderas:"🧥",Calcetines:"🧦",Bolsos:"👜",Accesorios:"💎",Otro:"📦"};
+const CATS=Object.keys(CAT);
+const EUR_COP=4500;
+const fmtEUR=n=>new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(n||0);
+const fmtCOP=n=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n||0);
+const genId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const escHtml=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+const compressImg=(dataUrl,size=300,q=0.72)=>new Promise(res=>{
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement("canvas");
+    const r=Math.min(size/img.width,size/img.height,1);
+    c.width=img.width*r;c.height=img.height*r;
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    res(c.toDataURL("image/jpeg",q));
+  };
+  img.src=dataUrl;
+});
+
+class FB{
+  constructor(url){this.base=url.replace(/\/$/,"")}
+  async get(p){return(await fetch(`${this.base}/${p}.json`)).json()}
+  async push(p,d){return(await fetch(`${this.base}/${p}.json`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...d,_ts:Date.now()})})).json()}
+  async patch(p,d){return fetch(`${this.base}/${p}.json`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)})}
+  async del(p){return fetch(`${this.base}/${p}.json`,{method:"DELETE"})}
+}
+
+async function scanLabel(b64,mime,key){
+  try{
+    const r=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
+      {method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({
+         contents:[{parts:[
+           {inline_data:{mime_type:mime,data:b64}},
+           {text:"Analiza esta etiqueta de ropa o calzado. Responde SOLO con JSON puro sin explicacion ni markdown:\n{\"marca\":\"\",\"modelo\":\"\",\"talla\":\"\",\"color\":\"\",\"categoria\":\"\"}\nCategoria debe ser una de: Zapatillas, Gorras, Camisetas, Pantalones, Sudaderas, Calcetines, Bolsos, Accesorios, Otro.\nSi no encuentras un campo dejalo vacio. SOLO JSON."}
+         ]}],
+         generationConfig:{temperature:0.1,maxOutputTokens:200}
+       })
+    });
+    const d=await r.json();
+    if(d.error){console.error("Gemini:",d.error.message);return{}}
+    const t=d.candidates?.[0]?.content?.parts?.[0]?.text||"{}";
+    return JSON.parse(t.replace(/```json|```/g,"").trim());
+  }catch(e){console.error(e);return{}}
+}
+
+let cfg=null,items=[],tab="scan",form=null,imgPrev=null,scanning=false,saving=false;
+let search="",filterCat="Todos",editId=null,synced=false,loading=true,db=null;
+
+try{const s=localStorage.getItem("sb_cfg");if(s)cfg=JSON.parse(s)}catch{}
+
+const $=id=>document.getElementById(id);
+
+function showToast(msg,type="ok"){
+  const t=document.createElement("div");
+  t.className="toast t"+type;t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+
+function fmtMg(p){return p>=30?"mg-g":p>=10?"mg-m":"mg-b"}
+
+function render(){
+  const app=$("app");
+  if(!cfg){renderSetup(app);return}
+  if(cfg.mode==="shared"&&!db)db=new FB(cfg.fbUrl);
+  app.innerHTML="";
+  app.appendChild(renderApp());
+}
+
+function saveLocalItems(){localStorage.setItem("sb_items",JSON.stringify(items))}
+
+async function loadItems(){
+  if(cfg.mode==="demo"){
+    try{items=JSON.parse(localStorage.getItem("sb_items")||"[]")}catch{items=[]}
+    loading=false;render();return;
+  }
+  try{
+    const data=await db.get("items");
+    items=data?Object.entries(data).map(([id,v])=>({...v,id})).sort((a,b)=>(b._ts||0)-(a._ts||0)):[];
+    synced=true;
+  }catch(e){
+    console.error(e);showToast("Sin conexión Firebase","err");
+    try{items=JSON.parse(localStorage.getItem("sb_items")||"[]")}catch{items=[]}
+  }
+  loading=false;render();
+}
+
+async function loadItemsSilent(){
+  if(!db)return;
+  try{
+    const data=await db.get("items");
+    items=data?Object.entries(data).map(([id,v])=>({...v,id})).sort((a,b)=>(b._ts||0)-(a._ts||0)):[];
+    synced=true;
+    if(tab==="stock"||tab==="stats")renderScroll();
+  }catch{}
+}
+
+function renderSetup(app){
+  let mode="shared";
+  const div=document.createElement("div");
+  div.className="setup";
+  div.innerHTML=`
+    <div class="slogo">Stock<em>Base</em></div>
+    <p class="ssub">Control de inventario con IA<br>España → Colombia</p>
+    <div class="mpill">
+      <button class="mopt on" id="m-shared">🔗 Compartido</button>
+      <button class="mopt" id="m-demo">📱 Solo local</button>
+    </div>
+    <div class="scard">
+      <div class="sstep">Tu nombre</div>
+      <input class="inp" id="s-name" placeholder="ej. Abraham o María"/>
+      <p class="shelp">Aparecerá en cada artículo que añadas.</p>
+    </div>
+    <div class="scard">
+      <div class="sstep">Clave Gemini — IA gratis para leer etiquetas</div>
+      <input class="inp" id="s-gem" placeholder="AIza..."/>
+      <p class="shelp">Obtén tu clave en <a class="slink" href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></p>
+    </div>
+    <div class="scard" id="fb-card">
+      <div class="sstep">Firebase — base de datos compartida gratis</div>
+      <input class="inp" id="s-fb" placeholder="https://mi-app-rtdb.firebaseio.com"/>
+      <p class="shelp">Gratis en <a class="slink" href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Realtime Database → Copiar URL</p>
+    </div>
+    <button class="btn bp" id="s-go" style="width:100%;margin-bottom:10px">✓ Empezar</button>
+    <p class="hint">En modo compartido los dos accedéis al mismo inventario en tiempo real.</p>
+  `;
+  app.appendChild(div);
+  div.querySelector("#m-shared").onclick=()=>{mode="shared";div.querySelector("#m-shared").classList.add("on");div.querySelector("#m-demo").classList.remove("on");div.querySelector("#fb-card").style.display=""};
+  div.querySelector("#m-demo").onclick=()=>{mode="demo";div.querySelector("#m-demo").classList.add("on");div.querySelector("#m-shared").classList.remove("on");div.querySelector("#fb-card").style.display="none"};
+  div.querySelector("#s-go").onclick=()=>{
+    const name=div.querySelector("#s-name").value.trim()||"Usuario";
+    const gemKey=div.querySelector("#s-gem").value.trim();
+    const fbUrl=div.querySelector("#s-fb").value.trim();
+    if(mode==="shared"&&!fbUrl){showToast("Añade la URL de Firebase","err");return}
+    cfg={mode,name,gemKey,fbUrl};
+    localStorage.setItem("sb_cfg",JSON.stringify(cfg));
+    if(cfg.mode==="shared")db=new FB(cfg.fbUrl);
+    loading=true;loadItems();
+  };
+}
+
+function renderApp(){
+  const wrap=document.createElement("div");
+  wrap.className="app";
+  const hdr=document.createElement("header");
+  hdr.className="hdr";
+  hdr.innerHTML=`
+    <div class="logo">Stock<em>Base</em></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="sdot"><span class="dot ${synced||cfg.mode==="demo"?"":"off"}"></span>${cfg.mode==="demo"?"Local":synced?"Sincronizado":"Sin conexión"}</div>
+      ${cfg.mode==="shared"?'<button class="ibt" id="btn-ref">↻</button>':""}
+      <button class="ibt" id="btn-cfg">⚙️</button>
+    </div>`;
+  wrap.appendChild(hdr);
+  const scroll=document.createElement("div");
+  scroll.className="scroll";scroll.id="scroll";
+  wrap.appendChild(scroll);
+  const nav=document.createElement("nav");
+  nav.className="nav";
+  nav.innerHTML=`
+    <button class="nb ${tab==="scan"?"on":""}" data-tab="scan"><span style="font-size:18px">📷</span>Escanear</button>
+    <button class="nb ${tab==="stock"?"on":""}" data-tab="stock"><span style="font-size:18px">📦</span>Inventario</button>
+    <button class="nb ${tab==="stats"?"on":""}" data-tab="stats"><span style="font-size:18px">📊</span>Stats</button>
+    <button class="nb" id="btn-add"><div class="nb-fab"><span style="font-size:16px">＋</span>Añadir</div></button>`;
+  wrap.appendChild(nav);
+  setTimeout(()=>{
+    document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderScroll();updateNav()});
+    const ref=$("btn-ref");if(ref)ref.onclick=()=>{loading=true;loadItems()};
+    $("btn-cfg").onclick=()=>{if(confirm("¿Resetear configuración? Los datos no se borran.")){localStorage.removeItem("sb_cfg");cfg=null;db=null;render()}};
+    $("btn-add").onclick=()=>{openNew();tab="form";renderScroll();updateNav()};
+    renderScroll();
+    if(cfg.mode==="shared")setInterval(loadItemsSilent,30000);
+  },0);
+  return wrap;
+}
+
+function updateNav(){document.querySelectorAll(".nb[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab))}
+
+function renderScroll(){
+  const scroll=$("scroll");if(!scroll)return;
+  scroll.innerHTML="";
+  if(tab==="scan")renderScan(scroll);
+  else if(tab==="form")renderForm(scroll);
+  else if(tab==="stock")renderStock(scroll);
+  else if(tab==="stats")renderStats(scroll);
+}
+
+function renderScan(el){
+  const totalU=items.reduce((s,i)=>s+(+i.cantidad||0),0);
+  const totalC=items.reduce((s,i)=>s+(+i.precioEur||0)*(+i.cantidad||1),0);
+  const totalS=items.reduce((s,i)=>s+(+i.precioVentaCop||0)*(+i.cantidad||1),0);
+  el.innerHTML=`
+    <div class="scan-frame" id="sf">
+      ${imgPrev?`<img src="${imgPrev}" alt="etiqueta"/>`:`<div class="scan-ph"><span class="big">📷</span><p>Toca para fotografiar<br>la etiqueta</p></div>`}
+      <span class="corner c-tl"></span><span class="corner c-tr"></span><span class="corner c-bl"></span><span class="corner c-br"></span>
+      ${scanning?`<div class="scan-ov"><span class="pls">🤖</span><span>Analizando con IA…</span></div>`:""}
+    </div>
+    <input type="file" id="f-file" accept="image/*" style="display:none"/>
+    <input type="file" id="f-cam" accept="image/*" capture="environment" style="display:none"/>
+    <div class="brow" style="margin-bottom:14px">
+      <button class="btn bp" id="btn-cam" ${scanning?"disabled":""}>📷 Cámara</button>
+      <button class="btn bs" id="btn-gal" ${scanning?"disabled":""}>🖼 Galería</button>
+      <button class="btn bgh" id="btn-man" style="flex:0 0 auto;padding:13px 14px">＋</button>
+    </div>
+    ${!cfg.gemKey?`<div class="warn"><p><strong>Sin clave Gemini:</strong> configura tu clave en ajustes ⚙️ para activar la IA.</p></div>`:""}
+    ${items.length>0?`<div class="qs">
+      <div class="qi"><div class="qv">${totalU}</div><div class="ql">Unidades</div></div>
+      <div class="qi"><div class="qv" style="color:var(--r);font-size:18px">${fmtEUR(totalC)}</div><div class="ql">Invertido</div></div>
+      <div class="qi"><div class="qv" style="color:var(--g);font-size:17px">${(totalS/1e6).toFixed(1)}M</div><div class="ql">Venta COP</div></div>
+    </div>`:""}
+    <p class="hint">La IA extrae marca, modelo, talla y color.<br>Tú añades los precios y revisas los datos.</p>`;
+  $("sf").onclick=()=>$("f-file").click();
+  $("btn-cam").onclick=()=>$("f-cam").click();
+  $("btn-gal").onclick=()=>$("f-file").click();
+  $("btn-man").onclick=()=>{openNew();tab="form";renderScroll();updateNav()};
+  $("f-file").onchange=e=>{if(e.target.files[0])handleImg(e.target.files[0])};
+  $("f-cam").onchange=e=>{if(e.target.files[0])handleImg(e.target.files[0])};
+}
+
+async function handleImg(file){
+  imgPrev=null;scanning=true;tab="scan";renderScroll();
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const dataUrl=e.target.result;
+    imgPrev=dataUrl;renderScroll();
+    let ex={};
+    if(cfg.gemKey){
+      ex=await scanLabel(dataUrl.split(",")[1],file.type||"image/jpeg",cfg.gemKey);
+      if(Object.keys(ex).length===0)showToast("IA no pudo leer — rellena manualmente","err");
+      else showToast("✨ Etiqueta leída con IA");
+    }
+    const thumb=await compressImg(dataUrl,300,0.72);
+    form={id:genId(),marca:"",modelo:"",talla:"",color:"",categoria:"Zapatillas",cantidad:1,notas:"",precioEur:"",precioVentaCop:"",imagen:thumb,addedBy:cfg.name,fecha:new Date().toISOString(),...ex,categoria:CATS.includes(ex.categoria)?ex.categoria:"Zapatillas"};
+    scanning=false;tab="form";renderScroll();updateNav();
+  };
+  reader.readAsDataURL(file);
+}
+
+function openNew(){
+  form={id:genId(),marca:"",modelo:"",talla:"",color:"",categoria:"Zapatillas",cantidad:1,notas:"",precioEur:"",precioVentaCop:"",imagen:null,addedBy:cfg.name,fecha:new Date().toISOString()};
+  imgPrev=null;editId=null;
+}
+
+function renderForm(el){
+  if(!form)openNew();
+  const copSug=form.precioEur?Math.round(+form.precioEur*EUR_COP):null;
+  const mg=form.precioEur&&form.precioVentaCop?Math.round((+form.precioVentaCop/EUR_COP/(+form.precioEur)-1)*100):null;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span class="sec" style="margin-bottom:0;border:none">${editId?"Editar artículo":"Nuevo artículo"}</span>
+      ${imgPrev?`<span class="aichip">✨ Leído por IA</span>`:""}
+    </div>
+    ${imgPrev?`<img src="${imgPrev}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;margin-bottom:13px;border:1px solid var(--bd)"/>`:""}
+    <div class="two">
+      <div class="fld"><label class="lbl">Marca *</label><input class="inp" id="f-marca" value="${escHtml(form.marca||"")}" placeholder="Nike, Adidas…"/></div>
+      <div class="fld"><label class="lbl">Modelo</label><input class="inp" id="f-modelo" value="${escHtml(form.modelo||"")}" placeholder="Air Max…"/></div>
+    </div>
+    <div class="fld"><label class="lbl">Categoría</label>
+      <select class="sel" id="f-cat">${CATS.map(c=>`<option ${form.categoria===c?"selected":""}>${c}</option>`).join("")}</select>
+    </div>
+    <div class="two">
+      <div class="fld"><label class="lbl">Talla</label><input class="inp" id="f-talla" value="${escHtml(form.talla||"")}" placeholder="42, M, L…"/></div>
+      <div class="fld"><label class="lbl">Color</label><input class="inp" id="f-color" value="${escHtml(form.color||"")}" placeholder="Negro…"/></div>
+    </div>
+    <div class="fld"><label class="lbl">Cantidad</label><input class="inp" id="f-cant" type="number" min="1" value="${form.cantidad||1}"/></div>
+    <div class="pbox">
+      <div class="pbox-t">💶 Coste Europa → 🇨🇴 Precio Colombia</div>
+      <div class="two">
+        <div class="fld" style="margin-bottom:0"><label class="lbl">Coste (€)</label><input class="inp" id="f-eur" type="number" value="${form.precioEur||""}" placeholder="0"/></div>
+        <div class="fld" style="margin-bottom:0"><label class="lbl">Venta (COP)</label>
+          <input class="inp" id="f-cop" type="number" value="${form.precioVentaCop||""}" placeholder="${copSug||0}"/>
+          ${copSug&&!form.precioVentaCop?`<div class="cophint">↗ Sugerido: ${fmtCOP(copSug)}</div>`:""}
+        </div>
+      </div>
+      ${mg!==null?`<div class="mgrow"><span style="color:var(--mu)">Margen estimado</span><span class="mgn ${fmtMg(mg)}">${mg>=0?"+":""}${mg}%</span></div>`:""}
+    </div>
+    <div class="fld"><label class="lbl">Notas / Referencia</label><textarea class="txa" id="f-notas" placeholder="Código de ref., estado, ubicación…">${escHtml(form.notas||"")}</textarea></div>
+    <div class="brow" style="margin-top:6px">
+      <button class="btn bg" id="btn-save" style="flex:2">${saving?"⏳ Guardando…":editId?"✓ Actualizar":"✓ Añadir al stock"}</button>
+      <button class="btn bgh" id="btn-cancel">✕</button>
+    </div>`;
+  const rd=()=>{form.marca=$("f-marca").value;form.modelo=$("f-modelo").value;form.categoria=$("f-cat").value;form.talla=$("f-talla").value;form.color=$("f-color").value;form.cantidad=$("f-cant").value;form.precioEur=$("f-eur").value;form.precioVentaCop=$("f-cop").value;form.notas=$("f-notas").value};
+  $("f-eur").oninput=()=>{rd();renderForm(el)};
+  $("f-cop").oninput=()=>{rd();renderForm(el)};
+  $("btn-save").onclick=async()=>{rd();await saveItem()};
+  $("btn-cancel").onclick=()=>{form=null;imgPrev=null;editId=null;tab="scan";renderScroll();updateNav()};
+}
+
+async function saveItem(){
+  if(!form.marca&&!form.modelo){showToast("Añade marca o modelo","err");return}
+  saving=true;renderScroll();
+  try{
+    if(cfg.mode==="shared"){
+      if(editId)await db.patch(`items/${editId}`,{...form,_ts:Date.now()});
+      else await db.push("items",form);
+      await loadItemsSilent();
+    }else{
+      if(editId)items=items.map(i=>i.id===editId?{...form}:i);
+      else items=[{...form,_ts:Date.now()},...items];
+      saveLocalItems();
+    }
+    showToast(editId?"Actualizado ✓":"Añadido al stock ✓");
+    form=null;imgPrev=null;editId=null;tab="stock";
+  }catch(e){console.error(e);showToast("Error al guardar","err")}
+  saving=false;renderScroll();updateNav();
+}
+
+function renderStock(el){
+  const filtered=items.filter(i=>{
+    const q=search.toLowerCase();
+    const m=!q||[i.marca,i.modelo,i.talla,i.color,i.categoria,i.notas].some(v=>v?.toLowerCase().includes(q));
+    return m&&(filterCat==="Todos"||i.categoria===filterCat);
+  });
+  el.innerHTML=`
+    <div class="sbar">
+      <input class="sinp" id="s-search" placeholder="🔍 Buscar marca, talla, color…" value="${escHtml(search)}"/>
+      <button class="btn bs" id="btn-csv" style="flex:0 0 auto;padding:10px 12px">⬇️</button>
+    </div>
+    <div class="chips">${["Todos",...CATS].map(c=>`<button class="chip ${filterCat===c?"on":""}" data-cat="${c}">${CAT[c]||""} ${c}</button>`).join("")}</div>
+    ${loading?`<div class="empty"><div class="empty-i">⏳</div><p>Cargando…</p></div>`
+     :filtered.length===0?`<div class="empty"><div class="empty-i">${search?"🔍":"📦"}</div><p>${search?"Sin resultados":"No hay artículos aún."}</p></div>`
+     :filtered.map(item=>{
+       const mg=item.precioEur&&item.precioVentaCop?Math.round((+item.precioVentaCop/EUR_COP/(+item.precioEur)-1)*100):null;
+       return`<div class="item">
+         <div class="thumb">${item.imagen?`<img src="${item.imagen}" alt=""/>`:(CAT[item.categoria]||"📦")}</div>
+         <div class="ibody">
+           <div class="ibrand">${escHtml(item.marca||"—")}</div>
+           <div class="imodel">${escHtml(item.modelo||"Sin modelo")}</div>
+           <div class="imeta">${[item.color,item.addedBy,item.fecha?.slice(0,10)].filter(Boolean).map(escHtml).join(" · ")}</div>
+           <div class="itags">
+             <span class="tag tc">${escHtml(item.categoria)}</span>
+             ${item.talla?`<span class="tag ts">T ${escHtml(item.talla)}</span>`:""}
+             ${item.cantidad>1?`<span class="tag tq">×${item.cantidad}</span>`:""}
+           </div>
+           <div class="iact">
+             <button class="btn bs bxs" data-edit="${item.id}">✏️ Editar</button>
+             <button class="btn bxs" style="background:var(--rl);color:var(--r);border:1px solid var(--rm)" data-del="${item.id}">🗑 Vendido</button>
+           </div>
+         </div>
+         <div class="iright">
+           ${item.precioEur?`<div class="peur">${fmtEUR(+item.precioEur)}</div>`:""}
+           ${item.precioVentaCop?`<div class="pcop">${(+item.precioVentaCop/1e6).toFixed(1)}M COP</div>`:""}
+           ${mg!==null?`<div class="pmg ${fmtMg(mg)}">${mg>=0?"+":""}${mg}%</div>`:""}
+         </div>
+       </div>`;
+     }).join("")}`;
+  $("s-search").oninput=e=>{search=e.target.value;renderStock(el)};
+  $("btn-csv").onclick=exportCSV;
+  el.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{filterCat=b.dataset.cat;renderStock(el)});
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{const it=items.find(i=>i.id===b.dataset.edit);if(it){form={...it};imgPrev=it.imagen||null;editId=it.id;tab="form";renderScroll();updateNav()}});
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(confirm("¿Marcar como vendido y eliminar?"))delItem(b.dataset.del)});
+}
+
+async function delItem(id){
+  try{
+    if(cfg.mode==="shared"){await db.del(`items/${id}`);await loadItemsSilent()}
+    else{items=items.filter(i=>i.id!==id);saveLocalItems()}
+    showToast("Eliminado del inventario");renderScroll();
+  }catch{showToast("Error al eliminar","err")}
+}
+
+function renderStats(el){
+  const totalU=items.reduce((s,i)=>s+(+i.cantidad||0),0);
+  const totalC=items.reduce((s,i)=>s+(+i.precioEur||0)*(+i.cantidad||1),0);
+  const totalS=items.reduce((s,i)=>s+(+i.precioVentaCop||0)*(+i.cantidad||1),0);
+  const margin=totalC>0&&totalS>0?Math.round((totalS/EUR_COP/totalC-1)*100):0;
+  const byCat=CATS.map(c=>({name:c,icon:CAT[c],uds:items.filter(i=>i.categoria===c).reduce((s,i)=>s+(+i.cantidad||0),0),cost:items.filter(i=>i.categoria===c).reduce((s,i)=>s+(+i.precioEur||0)*(+i.cantidad||1),0)})).filter(c=>c.uds>0);
+  el.innerHTML=`
+    <div class="sgrid">
+      <div class="sc"><div class="sl">Unidades totales</div><div class="sv">${totalU}</div><div class="ss">${items.length} referencias</div></div>
+      <div class="sc"><div class="sl">Inversión total</div><div class="sv" style="color:var(--r);font-size:20px">${fmtEUR(totalC)}</div><div class="ss">en euros</div></div>
+      <div class="sc"><div class="sl">Precio de venta</div><div class="sv" style="color:var(--g);font-size:20px">${(totalS/1e6).toFixed(1)}M</div><div class="ss">pesos COP</div></div>
+      <div class="sc"><div class="sl">Margen medio</div><div class="sv ${fmtMg(margin)}" style="font-size:22px">${margin>=0?"+":""}${margin}%</div><div class="ss">EUR → COP</div></div>
+    </div>
+    ${byCat.length>0?`<div class="cc"><div class="ct">Por categoría</div>${byCat.map((c,i)=>`<div class="crow" ${i===byCat.length-1?'style="border:none"':''}><div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">${c.icon}</span><div><div style="font-weight:600;font-size:14px">${c.name}</div><div style="font-size:11.5px;color:var(--mu)">${c.uds} uds</div></div></div><div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--r)">${fmtEUR(c.cost)}</div></div>`).join("")}</div>`:`<p style="color:var(--mu);font-size:13px;text-align:center;padding:20px">Añade artículos para ver estadísticas</p>`}
+    <button class="btn bs" style="width:100%;margin-top:4px" id="btn-csv2">⬇️ Exportar a Google Sheets / Excel</button>`;
+  const b=$("btn-csv2");if(b)b.onclick=exportCSV;
+}
+
+function exportCSV(){
+  const h=["Fecha","Añadido por","Categoría","Marca","Modelo","Talla","Color","Cantidad","Coste EUR","Precio COP","Margen %","Notas"];
+  const rows=items.map(i=>[i.fecha?.slice(0,10),i.addedBy,i.categoria,i.marca,i.modelo,i.talla,i.color,i.cantidad,i.precioEur,i.precioVentaCop,i.precioEur&&i.precioVentaCop?Math.round((+i.precioVentaCop/EUR_COP/(+i.precioEur)-1)*100)+"%":"",i.notas]);
+  const csv=[h,...rows].map(r=>r.map(c=>`"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`stockbase_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();showToast("CSV descargado ✓");
+}
+
+if(cfg&&cfg.mode==="shared")db=new FB(cfg.fbUrl);
+if(cfg)loadItems();else render();
+</script>
+</body>
+</html>
