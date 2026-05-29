@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="StockBase" />
+  <title>StockBase</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #F2EFE9; --white: #fff; --accent: #D4522A; --accent-light: #FAE9E4;
+      --border: #E0DDD6; --text: #1A1A1A; --muted: #8A8A8A; --success: #4CAF50;
+    }
+    html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', system-ui, sans-serif; color: var(--text); overflow: hidden; }
+    #app { max-width: 430px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+    .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .logo { font-family: 'DM Serif Display', serif; font-size: 24px; letter-spacing: -0.5px; }
+    .logo span { color: var(--accent); font-style: italic; }
+    .status-dot { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); font-weight: 500; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px 100px; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .image-zone { width: 100%; height: 200px; border-radius: 16px; border: 2px dashed var(--border); background: #ECEAE4; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; margin-bottom: 20px; }
+    .image-zone img { width: 100%; height: 100%; object-fit: cover; }
+    .image-placeholder { text-align: center; color: var(--muted); }
+    .image-placeholder .icon { font-size: 40px; margin-bottom: 8px; }
+    .image-placeholder p { font-size: 13px; font-weight: 500; }
+    .image-placeholder small { font-size: 11px; display: block; margin-top: 3px; opacity: 0.7; }
+    .scan-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #fff; }
+    .scan-overlay p { font-size: 13px; font-weight: 600; }
+    .spinner { width: 24px; height: 24px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .spinner-dark { width: 22px; height: 22px; border: 2.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+    .badge.ok  { background: #E8F5E9; color: #2E7D32; }
+    .badge.err { background: var(--accent-light); color: #C62828; }
+    .alert { border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; display: flex; gap: 8px; line-height: 1.5; }
+    .alert.error { background: #FDE8E4; border: 1px solid #F4C5BB; color: #C62828; }
+    .alert.info  { background: #E3F2FD; border: 1px solid #90CAF9; color: #1565C0; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+    .form-group { flex: 1; margin-bottom: 14px; }
+    .form-group.half { flex: 1; margin-bottom: 0; }
+    label.field-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 7px; }
+    input, select, textarea { width: 100%; padding: 13px 14px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--white); font-size: 14px; font-family: inherit; color: var(--text); outline: none; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: none; line-height: 1.5; }
+    .select-wrap { position: relative; }
+    .select-wrap::after { content: '▾'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    .btn-add { width: 100%; margin-top: 8px; padding: 17px; background: var(--accent); color: #fff; border: none; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+    .btn-add:active { transform: scale(0.98); }
+    .btn-add:disabled { background: #C5C0B7; cursor: not-allowed; }
+    .bottom-nav { background: var(--white); border-top: 1px solid var(--border); padding: 10px 0 env(safe-area-inset-bottom, 10px); display: flex; flex-shrink: 0; }
+    .nav-btn { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.8px; font-family: inherit; cursor: pointer; }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn .nav-icon { font-size: 22px; }
+
+    /* Tarjetas inventario */
+    .inv-card { background: var(--white); border-radius: 14px; padding: 14px 16px; border: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; animation: fadeIn 0.25s ease; }
+    .inv-thumb { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+    .inv-thumb-placeholder { width: 60px; height: 60px; border-radius: 10px; background: #ECEAE4; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+    .inv-info { flex: 1; min-width: 0; }
+    .inv-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .inv-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .inv-color { font-size: 11px; color: #ABABAB; margin-top: 2px; }
+    .inv-finanzas { font-size: 11px; margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+    .inv-ganancia { font-weight: 700; font-size: 13px; }
+    .inv-ganancia.pos { color: #2E7D32; }
+    .inv-ganancia.neg { color: #C62828; }
+    .inv-margen-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; margin-left: 6px; }
+    .inv-margen-badge.pos { background: #E8F5E9; color: #2E7D32; }
+    .inv-margen-badge.neg { background: #FDE8E4; color: #C62828; }
+    .inv-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+    .inv-btn { background: none; border: none; font-size: 17px; cursor: pointer; opacity: 0.5; padding: 4px; }
+    .inv-btn:hover { opacity: 0.9; }
+
+    /* Stats */
+    .stats-grid { display: flex; gap: 12px; margin-bottom: 20px; }
+    .stat-card { flex: 1; background: var(--white); border-radius: 14px; padding: 16px 10px; border: 1px solid var(--border); text-align: center; }
+    .stat-icon { font-size: 26px; }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); margin: 4px 0 2px; }
+    .stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; color: var(--muted); }
+    .stat-card-wide { background: var(--white); border-radius: 14px; padding: 16px 20px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .section-divider { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: var(--muted); margin: 20px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+    /* Cat breakdown table */
+    .cat-table { background: var(--white); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
+    .cat-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .cat-row:last-child { border-bottom: none; }
+    .cat-name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .cat-emoji { font-size: 16px; }
+    .cat-count { font-weight: 700; color: var(--accent); background: var(--accent-light); padding: 2px 9px; border-radius: 10px; font-size: 12px; }
+
+    /* Export button */
+    .btn-export { width: 100%; padding: 15px; background: #1B5E20; color: #fff; border: none; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; margin-top: 4px; }
+    .btn-export:active { transform: scale(0.98); }
+    .btn-export-csv { background: #0D47A1; margin-top: 10px; }
+
+    .key-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; height: 100%; overflow-y: auto; }
+    .key-screen .logo-big { font-family: 'DM Serif Display', serif; font-size: 36px; margin-bottom: 6px; }
+    .key-screen .logo-big span { color: var(--accent); font-style: italic; }
+    .key-screen .desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+    .key-screen input { margin-bottom: 14px; font-size: 13px; }
+    .key-tip { font-size: 11px; color: var(--muted); margin-top: 14px; line-height: 1.8; }
+    .key-tip a { color: var(--accent); }
+    .free-badge { display: inline-block; background: #E8F5E9; color: #2E7D32; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 16px; }
+
+    /* Modal ajustes y edición */
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
+    .modal { background: var(--white); border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 430px; max-height: 90dvh; overflow-y: auto; }
+    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+    .modal-row { margin-bottom: 14px; }
+    .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-sec { flex: 1; padding: 14px; background: #F2EFE9; color: var(--text); border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-pri { flex: 1; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+    /* Preview ganancia en formulario */
+    .ganancia-preview { background: var(--white); border-radius: 14px; border: 1.5px solid var(--border); padding: 14px 16px; margin-bottom: 14px; }
+    .ganancia-preview .gp-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 8px; }
+    .ganancia-preview .gp-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; color: var(--muted); }
+    .ganancia-preview .gp-total { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty .e-icon { font-size: 50px; margin-bottom: 14px; }
+    .empty p { font-size: 14px; }
+    .empty small { font-size: 12px; display: block; margin-top: 5px; opacity: 0.7; }
+    .icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; opacity: 0.6; padding: 2px 4px; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .view { animation: fadeIn 0.25s ease; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const DB_URL = 'https://inventario-c0ab6-default-rtdb.europe-west1.firebasedatabase.app';
+
+const CATEGORIES = [
+  'Zapatillas','Gorras','Camisetas','Pantalones',
+  'Bolsos','Ropa','Gafas','Cremas','Colonias','Pandoras','Charms'
+];
+
+const CAT_EMOJI = {
+  'Zapatillas':'👟','Gorras':'🧢','Camisetas':'👕','Pantalones':'👖',
+  'Bolsos':'👜','Ropa':'🧥','Gafas':'🕶️','Cremas':'🧴','Colonias':'🌸',
+  'Pandoras':'💍','Charms':'✨'
+};
+
+const ENVIO_EUR = 5;
+const TASA_FIJA = 4500; // tasa fija para el cálculo de ganancia
+
+let state = {
+  view: 'scan',
+  apiKey: localStorage.getItem('sb_api_key') || '',
+  tasaCambio: Number(localStorage.getItem('sb_tasa') || 4500),
+  form: emptyForm(),
+  imageURL: null, _lastFile: null,
+  loading: false, saving: false,
+  aiStatus: null, aiError: null,
+  loadingMsg: 'Analizando etiqueta…',
+  inventory: [], fbLoading: true, fbError: null,
+  showModal: false,
+  editItem: null,
+};
+
+function emptyForm() {
+  return { marca:'', modelo:'', categoria:'Zapatillas', talla:'', color:'', cantidad:1, precio:'', precio_colombia:'', notas:'' };
+}
+
+// ══ CÁLCULOS FINANCIEROS ══════════════════════
+// Fórmula corregida:
+// coste_total_cop = (precio_eur + ENVIO_EUR) * TASA_FIJA
+// ganancia_neta_cop = precio_colombia - coste_total_cop
+// margen_% = (precio_colombia / ((precio_eur + ENVIO_EUR) * TASA_FIJA)) * 100
+//
+// Nota: el margen % indica cuántas veces el precio de venta cubre el coste.
+// Si margen > 100% hay ganancia; si < 100% hay pérdida.
+// Para mostrar "% de beneficio sobre coste":
+//   beneficio_pct = ((precio_colombia - coste_cop) / coste_cop) * 100
+function calcFinanzas(item) {
+  const eur = Number(item.precio || 0);
+  const cop = Number(item.precio_colombia || 0);
+  if (!eur || !cop) return null;
+  const costeCOP = (eur + ENVIO_EUR) * TASA_FIJA;
+  const gananciaCOP = cop - costeCOP;
+  // % beneficio = ganancia / coste * 100
+  const margenPct = ((cop / costeCOP) * 100).toFixed(1);
+  const beneficioPct = ((gananciaCOP / costeCOP) * 100).toFixed(1);
+  return { costeCOP, gananciaCOP, margenPct, beneficioPct };
+}
+
+function formatCOP(n) {
+  return new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 }).format(n);
+}
+
+// ══ FIREBASE ══════════════════════════════════
+async function fbLoad() {
+  try {
+    const res = await fetch(`${DB_URL}/stockbase.json`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!data) return [];
+    return Object.entries(data).map(([k,v]) => ({...v, _key:k})).sort((a,b) => (b.id||0)-(a.id||0));
+  } catch(e) { state.fbError = e.message; return []; }
+}
+async function fbAdd(item) {
+  const res = await fetch(`${DB_URL}/stockbase.json`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(item)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+async function fbUpdate(key, item) {
+  const res = await fetch(`${DB_URL}/stockbase/${key}.json`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(item)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
+async function fbDelete(key) {
+  const res = await fetch(`${DB_URL}/stockbase/${key}.json`, { method:'DELETE' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
+async function refreshInventory() {
+  state.fbLoading = true; state.fbError = null; render();
+  state.inventory = await fbLoad();
+  state.fbLoading = false; render();
+}
+
+// ══ EXPORTACIÓN ═══════════════════════════════
+function exportToCSV() {
+  const inv = state.inventory;
+  if (!inv.length) { alert('No hay artículos para exportar.'); return; }
+
+  const headers = ['Marca','Modelo','Categoría','Talla','Color','Cantidad','Precio Coste (€)','Precio Venta COP','Coste Total COP','Ganancia Neta COP','% Beneficio','Notas'];
+  const rows = inv.map(item => {
+    const fin = calcFinanzas(item);
+    return [
+      item.marca || '',
+      item.modelo || '',
+      item.categoria || '',
+      item.talla || '',
+      item.color || '',
+      item.cantidad || 1,
+      item.precio || '',
+      item.precio_colombia || '',
+      fin ? fin.costeCOP.toFixed(0) : '',
+      fin ? fin.gananciaCOP.toFixed(0) : '',
+      fin ? fin.beneficioPct : '',
+      item.notas || '',
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`);
+  });
+
+  const csv = [headers.map(h=>`"${h}"`), ...rows].map(r=>r.join(',')).join('\n');
+  const BOM = '\uFEFF'; // UTF-8 BOM para Excel
+  const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `stockbase_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ══ IMAGEN ════════════════════════════════════
+function resizeToBlob(file, maxPx, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const u = URL.createObjectURL(file);
+    img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('No se pudo cargar la imagen')); };
+    img.onload = () => {
+      URL.revokeObjectURL(u);
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if(w>h){if(w>maxPx){h=Math.round(h*maxPx/w);w=maxPx;}}
+      else   {if(h>maxPx){w=Math.round(w*maxPx/h);h=maxPx;}}
+      const c = document.createElement('canvas');
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      c.toBlob(blob => {
+        if(!blob) return reject(new Error('toBlob falló'));
+        resolve(blob);
+      }, 'image/jpeg', quality);
+    };
+    img.src = u;
+  });
+}
+function blobToB64(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('FileReader falló'));
+    fr.onload = e => {
+      const parts = e.target.result.split(',');
+      if (parts.length < 2 || !parts[1]) return reject(new Error('base64 vacío'));
+      resolve(parts[1]);
+    };
+    fr.readAsDataURL(blob);
+  });
+}
+
+// ══ RENDER ════════════════════════════════════
+function render() {
+  const app = document.getElementById('app');
+  if (!app) return;
+  if (!state.apiKey) { app.innerHTML = renderSetup(); bindSetup(); return; }
+
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="content">${
+      state.view==='scan'      ? renderScan()      :
+      state.view==='inventory' ? renderInventory() : renderStats()
+    }</div>
+    ${renderNav()}
+    ${state.showModal ? renderModal() : ''}
+    ${state.editItem  ? renderEditModal() : ''}
+  `;
+  bindEvents();
+
+  if (state.view === 'scan') {
+    requestAnimationFrame(() => {
+      const f = state.form;
+      const s = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+      s('f-marca',f.marca); s('f-modelo',f.modelo); s('f-cat',f.categoria);
+      s('f-talla',f.talla); s('f-color',f.color); s('f-qty',f.cantidad);
+      s('f-precio',f.precio); s('f-colombia',f.precio_colombia); s('f-notas',f.notas);
+      const btn = document.getElementById('btn-add');
+      if (btn) btn.disabled = !f.marca || state.saving;
+      updateGananciaPreview();
+    });
+  }
+}
+
+// ── Setup ──────────────────────────────────────
+function renderSetup() {
+  return `<div style="max-width:430px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:var(--bg);">
+  <div class="key-screen">
+    <div class="logo-big">Stock<span>Base</span></div>
+    <div class="free-badge">✅ Powered by Claude AI</div>
+    <p class="desc">Introduce tu API Key de <strong>Anthropic</strong> para activar la lectura automática de etiquetas.</p>
+    <div class="alert info" style="text-align:left;margin-bottom:16px;font-size:12px">
+      💡 <span>1. Ve a <a href="https://console.anthropic.com/keys" target="_blank" style="color:var(--accent)">console.anthropic.com/keys</a><br>
+      2. Crea cuenta → <strong>Create Key</strong><br>
+      3. Los primeros $5 de crédito son gratis</span>
+    </div>
+    <label class="field-label" style="align-self:flex-start">API KEY DE ANTHROPIC</label>
+    <input type="password" id="key-input" placeholder="sk-ant-api03-…" autocomplete="off" />
+    <button class="btn-add" id="key-save">ACTIVAR STOCKBASE</button>
+    <p class="key-tip">La clave se guarda solo en este dispositivo.</p>
+  </div>
+</div>`;
+}
+function bindSetup() {
+  const save = () => { const v=document.getElementById('key-input').value.trim(); if(!v)return; state.apiKey=v; localStorage.setItem('sb_api_key',v); render(); };
+  document.getElementById('key-save').addEventListener('click', save);
+  document.getElementById('key-input').addEventListener('keydown', e => { if(e.key==='Enter') save(); });
+}
+
+// ── Modal ajustes ──────────────────────────────
+function renderModal() {
+  return `<div class="modal-bg" id="modal-bg"><div class="modal">
+    <h3>⚙️ Ajustes</h3>
+    <div class="modal-row"><label class="field-label">TASA EUR → COP (referencia display)</label><input type="number" id="m-tasa" value="${state.tasaCambio}" /></div>
+    <div class="modal-row" style="background:#FFF8E1;border-radius:10px;padding:10px 12px;font-size:12px;color:#8A6000;border:1px solid #FFE082">
+      ℹ️ El cálculo de ganancia siempre usa <strong>4.500 COP/€</strong> fijo.
+    </div>
+    <div class="modal-row" style="margin-top:14px"><label class="field-label">API KEY ANTHROPIC</label><input type="password" id="m-key" placeholder="Vacío = no cambiar" autocomplete="off" /></div>
+    <div class="modal-btns"><button class="btn-sec" id="m-cancel">Cancelar</button><button class="btn-pri" id="m-save">Guardar</button></div>
+  </div></div>`;
+}
+
+// ── Modal edición ──────────────────────────────
+function renderEditModal() {
+  const it = state.editItem;
+  return `<div class="modal-bg" id="edit-bg"><div class="modal">
+    <h3>✏️ Editar artículo</h3>
+    <div class="modal-row"><label class="field-label">MARCA *</label><input type="text" id="e-marca" value="${esc(it.marca||'')}" /></div>
+    <div class="modal-row"><label class="field-label">MODELO</label><input type="text" id="e-modelo" value="${esc(it.modelo||'')}" /></div>
+    <div class="modal-row"><label class="field-label">CATEGORÍA</label>
+      <div class="select-wrap"><select id="e-cat">${CATEGORIES.map(c=>`<option${c===it.categoria?' selected':''}>${c}</option>`).join('')}</select></div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div class="modal-row" style="flex:1"><label class="field-label">TALLA</label><input type="text" id="e-talla" value="${esc(it.talla||'')}" /></div>
+      <div class="modal-row" style="flex:1"><label class="field-label">COLOR</label><input type="text" id="e-color" value="${esc(it.color||'')}" /></div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div class="modal-row" style="flex:1"><label class="field-label">CANTIDAD</label><input type="number" id="e-qty" value="${it.cantidad||1}" min="1" /></div>
+      <div class="modal-row" style="flex:1"><label class="field-label">PRECIO COSTE (€)</label><input type="number" id="e-precio" value="${it.precio||''}" placeholder="0.00" /></div>
+    </div>
+    <div class="modal-row"><label class="field-label">PRECIO VENTA COLOMBIA (COP)</label><input type="number" id="e-colombia" value="${it.precio_colombia||''}" placeholder="180000" /></div>
+    <div id="edit-ganancia-preview"></div>
+    <div class="modal-row"><label class="field-label">NOTAS</label><textarea id="e-notas" rows="2">${esc(it.notas||'')}</textarea></div>
+    <div class="modal-btns">
+      <button class="btn-sec" id="e-cancel">Cancelar</button>
+      <button class="btn-pri" id="e-save">💾 Guardar</button>
+    </div>
+  </div></div>`;
+}
+
+// ── Header ─────────────────────────────────────
+function renderHeader() {
+  const dc = state.fbError ? '#C62828' : '#4CAF50';
+  const lbl = state.fbLoading ? '⏳ Cargando…' : state.fbError ? '❌ Error DB' : 'Firebase · Sync';
+  return `<div class="header">
+    <div class="logo">Stock<span>Base</span></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="status-dot"><div class="dot" style="background:${dc}"></div>${lbl}</div>
+      <button class="icon-btn" id="btn-refresh">🔄</button>
+      <button class="icon-btn" id="btn-settings">⚙️</button>
+    </div>
+  </div>`;
+}
+
+function renderNav() {
+  return `<div class="bottom-nav">${[['scan','📷','ESCANEAR'],['inventory','📦','INVENTARIO'],['stats','📊','STATS']].map(([id,icon,lbl])=>`
+    <button class="nav-btn ${state.view===id?'active':''}" data-view="${id}"><span class="nav-icon">${icon}</span>${lbl}</button>`).join('')}</div>`;
+}
+
+// ── Vista Escanear ─────────────────────────────
+function renderScan() {
+  const f = state.form;
+  const badge = state.aiStatus==='ok' ? `<span class="badge ok">✨ Leído por IA</span>`
+              : state.aiStatus==='error' ? `<span class="badge err">⚠ Manual</span>` : '';
+  const errAlert = state.aiStatus==='error'
+    ? `<div class="alert error">⚠️ No se pudo leer la imagen.<br><small style="display:block;margin-top:4px;font-family:monospace;word-break:break-all;opacity:.8">${esc(state.aiError||'')}</small></div>` : '';
+  const imgContent = state.imageURL
+    ? `<img src="${state.imageURL}" alt="etiqueta" />${state.loading?`<div class="scan-overlay"><div class="spinner"></div><p>${esc(state.loadingMsg)}</p></div>`:''}`
+    : `<div class="image-placeholder"><div class="icon">📷</div><p>Toca para fotografiar o elegir foto</p><small>Claude leerá los datos automáticamente</small></div>`;
+
+  return `<div class="view">
+    <div class="section-title">NUEVO ARTÍCULO ${badge}</div>
+    <div class="image-zone" id="image-zone">${imgContent}</div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" />
+    ${errAlert}
+    <div class="form-row">
+      <div class="form-group half"><label class="field-label">MARCA *</label><input type="text" id="f-marca" placeholder="Nike, Veja…" autocomplete="off" /></div>
+      <div class="form-group half"><label class="field-label">MODELO</label><input type="text" id="f-modelo" placeholder="Air Max, Campo…" autocomplete="off" /></div>
+    </div>
+    <div class="form-group"><label class="field-label">CATEGORÍA</label>
+      <div class="select-wrap"><select id="f-cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group half"><label class="field-label">TALLA</label><input type="text" id="f-talla" placeholder="EUR 40" autocomplete="off" /></div>
+      <div class="form-group half"><label class="field-label">COLOR</label><input type="text" id="f-color" placeholder="Blanco…" autocomplete="off" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group half"><label class="field-label">CANTIDAD</label><input type="number" id="f-qty" min="1" value="1" /></div>
+      <div class="form-group half"><label class="field-label">PRECIO COSTE (€)</label><input type="number" id="f-precio" placeholder="0.00" /></div>
+    </div>
+    <div class="form-group"><label class="field-label">PRECIO VENTA COLOMBIA (COP)</label><input type="number" id="f-colombia" placeholder="280000" /></div>
+    <div id="ganancia-preview"></div>
+    <div class="form-group"><label class="field-label">NOTAS</label><textarea id="f-notas" rows="2" placeholder="Referencia, material, país…"></textarea></div>
+    <button class="btn-add" id="btn-add" disabled>${state.saving ? '⏳ Guardando…' : '+ AÑADIR AL INVENTARIO'}</button>
+  </div>`;
+}
+
+// Preview ganancia en tiempo real
+function updateGananciaPreview(containerId='ganancia-preview', precioId='f-precio', colombiaId='f-colombia') {
+  const eur = Number(document.getElementById(precioId)?.value || 0);
+  const cop = Number(document.getElementById(colombiaId)?.value || 0);
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  if (!eur || !cop) { el.innerHTML = ''; return; }
+
+  const costeCOP = (eur + ENVIO_EUR) * TASA_FIJA;
+  const gananciaCOP = cop - costeCOP;
+  const beneficioPct = ((gananciaCOP / costeCOP) * 100).toFixed(1);
+  const color = gananciaCOP >= 0 ? '#2E7D32' : '#C62828';
+
+  el.innerHTML = `<div class="ganancia-preview">
+    <div class="gp-label">💰 CÁLCULO DE GANANCIA</div>
+    <div class="gp-row"><span>Artículo (${eur}€ × 4.500)</span><span>${formatCOP(eur * TASA_FIJA)}</span></div>
+    <div class="gp-row"><span>Envío (${ENVIO_EUR}€ × 4.500)</span><span>${formatCOP(ENVIO_EUR * TASA_FIJA)}</span></div>
+    <div class="gp-row"><span>Coste total COP</span><span>${formatCOP(costeCOP)}</span></div>
+    <div class="gp-row"><span>Precio venta</span><span>${formatCOP(cop)}</span></div>
+    <div class="gp-total">
+      <span>Ganancia neta</span>
+      <span style="color:${color}">${formatCOP(gananciaCOP)} <small style="font-weight:400">(${beneficioPct}% s/coste)</small></span>
+    </div>
+  </div>`;
+}
+
+// ── Vista Inventario ───────────────────────────
+function renderInventory() {
+  if (state.fbLoading) return `<div class="view"><div class="section-title">INVENTARIO</div><div class="empty"><div class="spinner-dark"></div><p>Cargando…</p></div></div>`;
+  if (state.fbError)   return `<div class="view"><div class="section-title">INVENTARIO</div><div class="alert error">❌ ${esc(state.fbError)}</div></div>`;
+  const items = state.inventory;
+  if (!items.length) return `<div class="view"><div class="section-title">INVENTARIO</div><div class="empty"><div class="e-icon">📦</div><p>Sin artículos todavía</p><small>Escanea tu primera etiqueta</small></div></div>`;
+
+  return `<div class="view">
+    <div class="section-title">INVENTARIO <span style="color:var(--accent)">${items.length}</span></div>
+    ${items.map(item => {
+      const fin = calcFinanzas(item);
+      const gananciaTxt = fin
+        ? `<div class="inv-ganancia ${Number(fin.gananciaCOP)>=0?'pos':'neg'}">
+             ${formatCOP(fin.gananciaCOP)} <span class="inv-margen-badge ${Number(fin.beneficioPct)>=0?'pos':'neg'}">${fin.beneficioPct}% s/coste</span>
+           </div>
+           <div style="font-size:11px;color:var(--muted)">Venta: ${formatCOP(item.precio_colombia)} · Coste: ${formatCOP(fin.costeCOP)}</div>`
+        : '';
+      return `<div class="inv-card">
+        ${item.imagen ? `<img class="inv-thumb" src="${item.imagen}" onerror="this.style.display='none'" />` : `<div class="inv-thumb-placeholder">${CAT_EMOJI[item.categoria]||'📦'}</div>`}
+        <div class="inv-info">
+          <div class="inv-name">${esc(item.marca)} ${esc(item.modelo)}</div>
+          <div class="inv-meta">${esc(item.categoria)} · T ${esc(item.talla||'—')} · ×${item.cantidad}${item.precio?' · €'+item.precio:''}</div>
+          ${item.color?`<div class="inv-color">${esc(item.color)}</div>`:''}
+          ${gananciaTxt ? `<div class="inv-finanzas">${gananciaTxt}</div>` : ''}
+        </div>
+        <div class="inv-actions">
+          <button class="inv-btn" data-edit="${esc(item._key)}" title="Editar">✏️</button>
+          <button class="inv-btn" data-del="${esc(item._key)}" title="Eliminar">🗑</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ── Vista Stats ────────────────────────────────
+function renderStats() {
+  const inv = state.inventory;
+  const totalUnidades = inv.reduce((s,i) => s+Number(i.cantidad||0), 0);
+  const brands = new Set(inv.map(i=>i.marca).filter(Boolean)).size;
+
+  // Desglose por categoría
+  const catMap = {};
+  inv.forEach(i => {
+    const cat = i.categoria || 'Sin categoría';
+    if (!catMap[cat]) catMap[cat] = { count: 0, unidades: 0 };
+    catMap[cat].count++;
+    catMap[cat].unidades += Number(i.cantidad||0);
+  });
+  const catEntries = Object.entries(catMap).sort((a,b) => b[1].unidades - a[1].unidades);
+  const topCat = catEntries[0];
+
+  const valorEUR = inv.reduce((s,i) => s+(Number(i.precio||0)*Number(i.cantidad||0)), 0);
+
+  // Totales financieros
+  const conFin = inv.filter(i => i.precio && i.precio_colombia);
+
+  // Total invertido en COP
+  const totalInvertidoCOP = conFin.reduce((s,i) => {
+    const costeCOP = (Number(i.precio) + ENVIO_EUR) * TASA_FIJA;
+    return s + costeCOP * Number(i.cantidad||1);
+  }, 0);
+
+  // Total precio de venta COP
+  const totalVentaCOP = conFin.reduce((s,i) => s + Number(i.precio_colombia||0) * Number(i.cantidad||1), 0);
+
+  const ganancias = conFin.map(i => {
+    const f = calcFinanzas(i);
+    return f ? Number(f.gananciaCOP) * Number(i.cantidad||1) : 0;
+  });
+  const gananciaTotal = ganancias.reduce((a,b)=>a+b,0);
+
+  const margenMedio = conFin.length
+    ? (conFin.map(i=>{ const f=calcFinanzas(i); return f?Number(f.beneficioPct):0; }).reduce((a,b)=>a+b,0)/conFin.length).toFixed(1)
+    : null;
+
+  return `<div class="view">
+    <div class="section-title">ESTADÍSTICAS</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value">${totalUnidades}</div><div class="stat-label">UNIDADES</div></div>
+      <div class="stat-card"><div class="stat-icon">🏷</div><div class="stat-value">${brands}</div><div class="stat-label">MARCAS</div></div>
+      <div class="stat-card"><div class="stat-icon">🗂</div><div class="stat-value">${inv.length}</div><div class="stat-label">MODELOS</div></div>
+    </div>
+
+    <!-- Desglose por categoría -->
+    <div class="section-divider">📊 ARTÍCULOS POR CATEGORÍA</div>
+    <div class="cat-table">
+      ${catEntries.length ? catEntries.map(([cat, data]) => `
+        <div class="cat-row">
+          <div class="cat-name"><span class="cat-emoji">${CAT_EMOJI[cat]||'📦'}</span>${cat}</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:11px;color:var(--muted)">${data.count} ref.</span>
+            <span class="cat-count">${data.unidades} uds</span>
+          </div>
+        </div>`).join('') : '<div class="cat-row" style="color:var(--muted);font-size:13px">Sin datos</div>'}
+    </div>
+
+    ${valorEUR>0?`<div class="stat-card-wide">
+      <div><div class="stat-label">COSTE TOTAL (€)</div><div class="stat-value" style="font-size:28px">€${valorEUR.toFixed(0)}</div></div>
+      <div style="font-size:36px">💶</div>
+    </div>`:''}
+
+    ${topCat?`<div class="stat-card-wide">
+      <div><div class="stat-label">CATEGORÍA TOP</div><div style="font-size:18px;font-weight:700;margin-top:4px">${CAT_EMOJI[topCat[0]]||''} ${topCat[0]}</div></div>
+      <div style="font-size:36px">🥇</div>
+    </div>`:''}
+
+    <div class="section-divider">🇨🇴 COLOMBIA — FINANZAS</div>
+
+    <!-- Total invertido COP -->
+    ${totalInvertidoCOP > 0 ? `<div class="stat-card-wide">
+      <div>
+        <div class="stat-label">TOTAL INVERTIDO (COP)</div>
+        <div style="font-size:${totalInvertidoCOP>999999?'16px':'20px'};font-weight:700;color:#0D47A1;margin-top:4px">${formatCOP(totalInvertidoCOP)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Capital desembolsado</div>
+      </div>
+      <div style="font-size:32px">💸</div>
+    </div>` : ''}
+
+    <!-- Total precio de venta COP -->
+    ${totalVentaCOP > 0 ? `<div class="stat-card-wide">
+      <div>
+        <div class="stat-label">TOTAL PRECIO VENTA (COP)</div>
+        <div style="font-size:${totalVentaCOP>999999?'16px':'20px'};font-weight:700;color:#1B5E20;margin-top:4px">${formatCOP(totalVentaCOP)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Si vendes todo el stock</div>
+      </div>
+      <div style="font-size:32px">🏪</div>
+    </div>` : ''}
+
+    <div style="display:flex;gap:12px;margin-bottom:12px">
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value" style="font-size:${gananciaTotal>999999?'13px':'16px'};margin:8px 0 4px">${gananciaTotal!==0?formatCOP(gananciaTotal):'—'}</div>
+        <div class="stat-label">GANANCIA NETA</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" style="font-size:22px">${margenMedio!==null?margenMedio+'%':'—'}</div>
+        <div class="stat-label">% S/COSTE MEDIO</div>
+      </div>
+    </div>
+
+    <div class="stat-card-wide">
+      <div>
+        <div class="stat-label">TASA CÁLCULO (FIJA)</div>
+        <div style="font-size:18px;font-weight:700;margin-top:4px">1 € = 4.500 COP</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Envío incluido: +${ENVIO_EUR}€/artículo</div>
+      </div>
+      <div style="font-size:32px">💱</div>
+    </div>
+
+    <!-- Exportación -->
+    <div class="section-divider">📤 EXPORTAR BASE DE DATOS</div>
+    <button class="btn-export" id="btn-export-csv">
+      📊 Exportar a Excel / Google Sheets (.CSV)
+    </button>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6">
+      Abre el archivo .CSV en Excel o súbelo a<br>Google Drive → clic derecho → Abrir con Hojas de cálculo
+    </div>
+
+    ${!inv.length?`<div class="empty"><div class="e-icon">📊</div><p>Añade artículos para ver estadísticas</p></div>`:''}
+  </div>`;
+}
+
+// ══ EVENTOS ═══════════════════════════════════
+function bindEvents() {
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.view; state.view = v;
+    if (v==='inventory'||v==='stats') refreshInventory(); else render();
+  }));
+  document.getElementById('btn-refresh')?.addEventListener('click', refreshInventory);
+  document.getElementById('btn-settings')?.addEventListener('click', () => { state.showModal=true; render(); });
+
+  // Ajustes modal
+  document.getElementById('m-cancel')?.addEventListener('click', () => { state.showModal=false; render(); });
+  document.getElementById('modal-bg')?.addEventListener('click', e => { if(e.target.id==='modal-bg'){state.showModal=false;render();} });
+  document.getElementById('m-save')?.addEventListener('click', () => {
+    const t = Number(document.getElementById('m-tasa').value);
+    if (t>0) { state.tasaCambio=t; localStorage.setItem('sb_tasa',t); }
+    const k = document.getElementById('m-key').value.trim();
+    if (k) { state.apiKey=k; localStorage.setItem('sb_api_key',k); }
+    state.showModal=false; render();
+  });
+
+  // Editar / Eliminar
+  document.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => {
+    const key = btn.dataset.edit;
+    state.editItem = state.inventory.find(i => i._key === key) || null;
+    render();
+    setTimeout(bindEditEvents, 50);
+  }));
+  document.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
+    if (!confirm('¿Eliminar este artículo?')) return;
+    try { await fbDelete(btn.dataset.del); await refreshInventory(); }
+    catch(e) { alert('Error: '+e.message); }
+  }));
+
+  // Exportar CSV
+  document.getElementById('btn-export-csv')?.addEventListener('click', exportToCSV);
+
+  if (state.view !== 'scan') return;
+
+  document.getElementById('image-zone')?.addEventListener('click', () => {
+    if (!state.loading && !state.saving) document.getElementById('file-input').click();
+  });
+  document.getElementById('file-input')?.addEventListener('change', handleFile);
+
+  ['marca','modelo','talla','color','notas'].forEach(k => {
+    document.getElementById('f-'+k)?.addEventListener('input', e => {
+      state.form[k] = e.target.value;
+      document.getElementById('btn-add').disabled = !state.form.marca || state.saving;
+    });
+  });
+  [['f-cat','categoria'],['f-qty','cantidad']].forEach(([id,key]) => {
+    document.getElementById(id)?.addEventListener('change', e => { state.form[key]=e.target.value; });
+  });
+  document.getElementById('f-precio')?.addEventListener('input', e => {
+    state.form.precio = e.target.value; updateGananciaPreview();
+  });
+  document.getElementById('f-colombia')?.addEventListener('input', e => {
+    state.form.precio_colombia = e.target.value; updateGananciaPreview();
+  });
+
+  document.getElementById('btn-add')?.addEventListener('click', async () => {
+    if (!state.form.marca || state.saving) return;
+    state.saving = true; render();
+    try {
+      let imagen = null;
+      if (state._lastFile) {
+        const blob = await resizeToBlob(state._lastFile, 320, 0.65);
+        const b64 = await blobToB64(blob);
+        imagen = 'data:image/jpeg;base64,' + b64;
+      }
+      await fbAdd({
+        ...state.form,
+        cantidad: Number(state.form.cantidad)||1,
+        precio: state.form.precio!=='' ? Number(state.form.precio) : '',
+        precio_colombia: state.form.precio_colombia!=='' ? Number(state.form.precio_colombia) : '',
+        id: Date.now(), imagen: imagen||null,
+      });
+      state.form=emptyForm(); state.imageURL=null; state._lastFile=null;
+      state.aiStatus=null; state.aiError=null; state.saving=false;
+      state.view='inventory'; await refreshInventory();
+    } catch(e) { alert('Error al guardar: '+e.message); state.saving=false; render(); }
+  });
+}
+
+function bindEditEvents() {
+  document.getElementById('e-cancel')?.addEventListener('click', () => { state.editItem=null; render(); });
+  document.getElementById('edit-bg')?.addEventListener('click', e => { if(e.target.id==='edit-bg'){state.editItem=null;render();} });
+
+  const updateEditPreview = () => updateGananciaPreview('edit-ganancia-preview','e-precio','e-colombia');
+  document.getElementById('e-precio')?.addEventListener('input', updateEditPreview);
+  document.getElementById('e-colombia')?.addEventListener('input', updateEditPreview);
+  updateEditPreview();
+
+  document.getElementById('e-save')?.addEventListener('click', async () => {
+    const it = state.editItem;
+    if (!it) return;
+    const updated = {
+      marca:    document.getElementById('e-marca').value.trim(),
+      modelo:   document.getElementById('e-modelo').value.trim(),
+      categoria:document.getElementById('e-cat').value,
+      talla:    document.getElementById('e-talla').value.trim(),
+      color:    document.getElementById('e-color').value.trim(),
+      cantidad: Number(document.getElementById('e-qty').value)||1,
+      precio:   document.getElementById('e-precio').value!=='' ? Number(document.getElementById('e-precio').value) : '',
+      precio_colombia: document.getElementById('e-colombia').value!=='' ? Number(document.getElementById('e-colombia').value) : '',
+      notas:    document.getElementById('e-notas').value.trim(),
+    };
+    try {
+      await fbUpdate(it._key, updated);
+      state.editItem = null;
+      await refreshInventory();
+    } catch(e) { alert('Error al actualizar: '+e.message); }
+  });
+}
+
+// ══ CLAUDE API ════════════════════════════════
+async function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  state._lastFile=file; state.aiStatus=null; state.aiError=null; state.form=emptyForm();
+  state.loading=true; state.loadingMsg='Procesando imagen…';
+  if (state.imageURL) URL.revokeObjectURL(state.imageURL);
+  state.imageURL = URL.createObjectURL(file);
+  render();
+
+  try {
+    state.loadingMsg = 'Analizando etiqueta con Claude…'; render();
+    const blob = await resizeToBlob(file, 800, 0.85);
+    const b64 = await blobToB64(blob);
+    await readWithClaude(b64, 'image/jpeg');
+  } catch(err) {
+    state.aiError = err.message;
+    state.aiStatus = 'error'; state.loading=false; render();
+  }
+}
+
+async function readWithClaude(b64, mediaType) {
+  const cats = CATEGORIES.join(',');
+  const PROMPT = `Look at this product label/box and extract the product information.
+Reply ONLY with a raw JSON object (no markdown, no backticks):
+{"marca":"brand name","modelo":"model name","categoria":"one of: ${cats}","talla":"size or empty","color":"color or empty","notas":"SKU reference code or empty"}
+Example: {"marca":"Veja","modelo":"Campo","categoria":"Zapatillas","talla":"","color":"White","notas":"CP0503495A"}`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': state.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      messages: [{ role:'user', content:[
+        { type:'image', source:{ type:'base64', media_type:mediaType, data:b64 } },
+        { type:'text', text:PROMPT }
+      ]}]
+    })
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Claude API: ${json?.error?.message||`HTTP ${res.status}`}`);
+
+  const raw = json?.content?.[0]?.text || '';
+  if (!raw) throw new Error('Claude devolvió respuesta vacía');
+  const clean = raw.replace(/^```json\s*/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  const match = clean.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No se encontró JSON en la respuesta');
+
+  const p = JSON.parse(match[0]);
+  state.form.marca     = String(p.marca  ||'').trim();
+  state.form.modelo    = String(p.modelo ||'').trim();
+  state.form.categoria = CATEGORIES.includes(p.categoria) ? p.categoria : 'Zapatillas';
+  state.form.talla     = String(p.talla  ||'').trim();
+  state.form.color     = String(p.color  ||'').trim();
+  state.form.notas     = String(p.notas  ||'').trim();
+  state.aiStatus='ok'; state.loading=false; render();
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+refreshInventory();
+</script>
+</body>
+</html>
